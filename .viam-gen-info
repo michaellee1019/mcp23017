@@ -1,0 +1,12 @@
+{
+  "module_name": "mcp23017",
+  "namespace": "michaellee1019",
+  "language": "python",
+  "resource_type": "component",
+  "resource_subtype": "board",
+  "model_name": "board",
+  "enable_cloud_build": true,
+  "initialize_git": false,
+  "generator_version": "0.1.0",
+  "generated_on": "2024-11-22T20:18:11.435353Z"
+}

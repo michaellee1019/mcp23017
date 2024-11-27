@@ -1,0 +1,24 @@
+{
+  "$schema": "https://dl.viam.dev/module.schema.json",
+  "module_id": "michaellee1019:mcp23017",
+  "visibility": "public",
+  "url": "",
+  "description": "Modular board component: board",
+  "models": [
+    {
+      "api": "rdk:component:board",
+      "model": "michaellee1019:mcp23017:board"
+    }
+  ],
+  "entrypoint": "dist/main",
+  "first_run": "",
+  "build": {
+    "build": "./build.sh",
+    "setup": "./setup.sh",
+    "path": "dist/archive.tar.gz",
+    "arch": [
+      "linux/amd64",
+      "linux/arm64"
+    ]
+  }
+}
