@@ -54,7 +54,7 @@ bus.write_byte_data(MCP23017_ADDRESS,MCP23017_IODIRA,0x00)
 #configue all PinB input
 bus.write_byte_data(MCP23017_ADDRESS,MCP23017_IODIRB,0xFF)
 #configue all PinB pullDOWN
-bus.write_byte_data(MCP23017_ADDRESS,MCP23017_GPPUB,0x00)   
+bus.write_byte_data(MCP23017_ADDRESS,MCP23017_GPPUB,0x00)
  
 
 #only for debug       

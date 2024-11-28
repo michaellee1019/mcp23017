@@ -2,7 +2,7 @@
 cd `dirname $0`
 
 # Create a virtual environment to run our code
-VENV_NAME="venv"
+VENV_NAME=".venv"
 PYTHON="$VENV_NAME/bin/python"
 ENV_ERROR="This module requires Python >=3.8, pip, and virtualenv to be installed."
 
@@ -19,7 +19,7 @@ if ! python3 -m venv $VENV_NAME >/dev/null 2>&1; then
 			$SUDO apt -qq update >/dev/null
 		fi
         $SUDO apt install -qqy python3-venv >/dev/null 2>&1
-        if ! python3 -m venv $VENV_NAME >/dev/null 2>&1; then
+        if ! python3 -m .venv $VENV_NAME >/dev/null 2>&1; then
             echo $ENV_ERROR >&2
             exit 1
         fi

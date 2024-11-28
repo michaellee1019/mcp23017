@@ -1,24 +1,20 @@
 {
   "$schema": "https://dl.viam.dev/module.schema.json",
   "module_id": "michaellee1019:mcp23017",
-  "visibility": "public",
-  "url": "",
-  "description": "Modular board component: board",
+  "visibility": "private",
+  "url": "https://github.com/michaellee1019/mcp23017",
+  "description": "Provides models for the mcp23017 GPIO expansion chip.",
   "models": [
     {
       "api": "rdk:component:board",
       "model": "michaellee1019:mcp23017:board"
     }
   ],
-  "entrypoint": "dist/main",
+  "entrypoint": "reload.sh",
   "first_run": "",
   "build": {
-    "build": "./build.sh",
+    "build": "rm -f module.tar.gz && tar czf module.tar.gz requirements.txt src/*.py meta.json setup.sh reload.sh",
     "setup": "./setup.sh",
-    "path": "dist/archive.tar.gz",
-    "arch": [
-      "linux/amd64",
-      "linux/arm64"
-    ]
+    "path": "module.tar.gz"
   }
 }
