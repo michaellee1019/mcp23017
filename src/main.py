@@ -1,10 +1,11 @@
 import asyncio
-
+import subprocess
 from datetime import timedelta
 from typing import Any, ClassVar, Dict, List, Mapping, Optional, Sequence
 
 from typing_extensions import Self
 from viam.components.board import Board, TickStream
+from viam.components.generic import Generic
 from viam.module.module import Module
 from viam.proto.app.robot import ComponentConfig
 from viam.proto.common import ResourceName
@@ -12,10 +13,13 @@ from viam.proto.component.board import PowerMode
 from viam.resource.base import ResourceBase
 from viam.resource.easy_resource import EasyResource
 from viam.resource.types import Model, ModelFamily
+from viam.utils import ValueTypes
+from viam import logging
 
 import digitalio
 import board
 import busio
+import smbus
 from adafruit_mcp230xx.mcp23017 import MCP23017
 from adafruit_mcp230xx.digital_inout import DigitalInOut
 
@@ -42,6 +46,8 @@ MCP23017_INTFB = 0x0F
 MCP23017_INTCAPB = 0x11
 MCP23017_GPIOB = 0x13
 MCP23017_OLATB = 0x15
+
+LOGGER = logging.getLogger(__name__)
 
 
 class MCP23017Board(Board, EasyResource):
@@ -98,7 +104,9 @@ class MCP23017Board(Board, EasyResource):
                 config.attributes.fields["i2c_address"].string_value, base=16
             )
         if "pullups" in config.attributes.fields:
-            self.pullups = [int(x) for x in config.attributes.fields["pullups"].list_value]
+            self.pullups = [
+                int(x) for x in config.attributes.fields["pullups"].list_value
+            ]
 
         self.mcp = MCP23017(self.i2c, self.i2c_address)
         self.pins = [self.mcp.get_pin(i) for i in range(16)]
@@ -117,7 +125,7 @@ class MCP23017Board(Board, EasyResource):
             *,
             extra: Optional[Dict[str, Any]] = None,
             timeout: Optional[float] = None,
-            **kwargs
+            **kwargs,
         ) -> Board.Analog.Value:
             raise NotImplementedError()
 
@@ -127,7 +135,7 @@ class MCP23017Board(Board, EasyResource):
             *,
             extra: Optional[Dict[str, Any]] = None,
             timeout: Optional[float] = None,
-            **kwargs
+            **kwargs,
         ):
             raise NotImplementedError()
 
@@ -138,7 +146,7 @@ class MCP23017Board(Board, EasyResource):
             *,
             extra: Optional[Dict[str, Any]] = None,
             timeout: Optional[float] = None,
-            **kwargs
+            **kwargs,
         ) -> int:
             raise NotImplementedError()
 
@@ -155,7 +163,7 @@ class MCP23017Board(Board, EasyResource):
             *,
             extra: Optional[Dict[str, Any]] = None,
             timeout: Optional[float] = None,
-            **kwargs
+            **kwargs,
         ):
             if self.pin.direction:
                 self.pin.switch_to_output()
@@ -166,7 +174,7 @@ class MCP23017Board(Board, EasyResource):
             *,
             extra: Optional[Dict[str, Any]] = None,
             timeout: Optional[float] = None,
-            **kwargs
+            **kwargs,
         ) -> bool:
             if not self.pin.direction:
                 self.pin.switch_to_input()
@@ -177,7 +185,7 @@ class MCP23017Board(Board, EasyResource):
             *,
             extra: Optional[Dict[str, Any]] = None,
             timeout: Optional[float] = None,
-            **kwargs
+            **kwargs,
         ) -> float:
             raise NotImplementedError()
 
@@ -187,7 +195,7 @@ class MCP23017Board(Board, EasyResource):
             *,
             extra: Optional[Dict[str, Any]] = None,
             timeout: Optional[float] = None,
-            **kwargs
+            **kwargs,
         ):
             raise NotImplementedError()
 
@@ -196,7 +204,7 @@ class MCP23017Board(Board, EasyResource):
             *,
             extra: Optional[Dict[str, Any]] = None,
             timeout: Optional[float] = None,
-            **kwargs
+            **kwargs,
         ) -> int:
             raise NotImplementedError()
 
@@ -206,7 +214,7 @@ class MCP23017Board(Board, EasyResource):
             *,
             extra: Optional[Dict[str, Any]] = None,
             timeout: Optional[float] = None,
-            **kwargs
+            **kwargs,
         ):
             raise NotImplementedError()
 
@@ -236,7 +244,7 @@ class MCP23017Board(Board, EasyResource):
         duration: Optional[timedelta] = None,
         *,
         timeout: Optional[float] = None,
-        **kwargs
+        **kwargs,
     ):
         raise NotImplementedError()
 
@@ -245,10 +253,169 @@ class MCP23017Board(Board, EasyResource):
         interrupts: List[DigitalInterrupt],
         *,
         timeout: Optional[float] = None,
-        **kwargs
+        **kwargs,
     ) -> TickStream:
         raise NotImplementedError()
 
+segment_char_mappings = {
+    "A": {"gfedcba": 0x77, "abcdefg": 0x77},
+    "a": {"gfedcba": 0x7D, "abcdefg": 0x5F},
+    "b": {"gfedcba": 0x1F, "abcdefg": 0x7C},
+    "C": {"gfedcba": 0x4E, "abcdefg": 0x39},
+    "c": {"gfedcba": 0x0D, "abcdefg": 0x58},
+    "d": {"gfedcba": 0x3D, "abcdefg": 0x5E},
+    "E": {"gfedcba": 0x4F, "abcdefg": 0x79},
+    "F": {"gfedcba": 0x47, "abcdefg": 0x71},
+    "G": {"gfedcba": 0x5E, "abcdefg": 0x3D},
+    "H": {"gfedcba": 0x37, "abcdefg": 0x76},
+    "h": {"gfedcba": 0x17, "abcdefg": 0x74},
+    "I": {"gfedcba": 0x06, "abcdefg": 0x30},
+    "J": {"gfedcba": 0x3C, "abcdefg": 0x1E},
+    "L": {"gfedcba": 0x0E, "abcdefg": 0x38},
+    "n": {"gfedcba": 0x15, "abcdefg": 0x54},
+    "O": {"gfedcba": 0x7E, "abcdefg": 0x3F},
+    "o": {"gfedcba": 0x1D, "abcdefg": 0x5C},
+    "P": {"gfedcba": 0x67, "abcdefg": 0x73},
+    "q": {"gfedcba": 0x73, "abcdefg": 0x67},
+    "r": {"gfedcba": 0x05, "abcdefg": 0x50},
+    "S": {"gfedcba": 0x5B, "abcdefg": 0x6D},
+    "t": {"gfedcba": 0x0F, "abcdefg": 0x78},
+    "U": {"gfedcba": 0x3E, "abcdefg": 0x3E},
+    "u": {"gfedcba": 0x1C, "abcdefg": 0x1C},
+    "y": {"gfedcba": 0x3B, "abcdefg": 0x6E},
+    "0": {"gfedcba": 0x7E, "abcdefg": 0xC0},
+    "1": {"gfedcba": 0x30, "abcdefg": 0xF9},
+    "2": {"gfedcba": 0x6D, "abcdefg": 0xA4},
+    "3": {"gfedcba": 0x79, "abcdefg": 0xB0},
+    "4": {"gfedcba": 0x33, "abcdefg": 0x99},
+    "5": {"gfedcba": 0x5B, "abcdefg": 0x92},
+    "6": {"gfedcba": 0x5F, "abcdefg": 0x82},
+    "7": {"gfedcba": 0x70, "abcdefg": 0xF8},
+    "8": {"gfedcba": 0x7F, "abcdefg": 0x80},
+    "9": {"gfedcba": 0x7B, "abcdefg": 0x90},
+    " ": {"gfedcba": 0x00, "abcdefg": 0x00},
+}
+
+class MCP23017SevenSegmentLED(Generic, EasyResource):
+    MODEL: ClassVar[Model] = Model(
+        ModelFamily("michaellee1019", "mcp23017"), "seven_segment_led"
+    )
+    i2c_bus: int = 1
+    i2c_address: int = 0x27
+    i2c = None
+    a_direction: str = "gfedcba"
+    b_direction: str = "gfedcba"
+
+    @classmethod
+    def new(
+        cls, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]
+    ) -> Self:
+        return super().new(config, dependencies)
+
+    def reconfigure(
+        self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]
+    ):
+        LOGGER.error(f"reconfiguring with: {config}")
+        if "i2c_bus" in config.attributes.fields:
+            self.i2c_bus = int(config.attributes.fields["i2c_bus"].number_value)
+        if "i2c_address" in config.attributes.fields:
+            self.i2c_address = config.attributes.fields["i2c_address"].string_value
+        if "a_direction" in config.attributes.fields:
+            self.a_direction = config.attributes.fields["a_direction"].string_value
+        if "b_direction" in config.attributes.fields:
+            self.b_direction = config.attributes.fields["b_direction"].string_value
+
+        self.i2c = smbus.SMBus(self.i2c_bus)
+
+        # Configue the register to default value
+        for addr in range(22):
+            if (addr == 0) or (addr == 1):
+                self.i2c.write_byte_data(self.i2c_address, addr, 0xFF)
+            else:
+                self.i2c.write_byte_data(self.i2c_address, addr, 0x00)
+
+        # configue all PinA + PinB output
+        self.i2c.write_byte_data(self.i2c_address, MCP23017_IODIRA, 0x00)
+        self.i2c.write_byte_data(self.i2c_address, MCP23017_IODIRB, 0x00)
+
+        return super().reconfigure(config, dependencies)
+
+    @classmethod
+    def validate_config(self, config: ComponentConfig) -> None:
+        # Custom validation can be done by specifiying a validate function like this one. Validate functions
+        # can raise errors that will be returned to the parent through gRPC. Validate functions can
+        # also return a sequence of strings representing the implicit dependencies of the resource.
+        return None
+
+    async def do_command(
+        self,
+        command: Mapping[str, ValueTypes],
+        *,
+        timeout: Optional[float] = None,
+        **kwargs,
+    ) -> Mapping[str, ValueTypes]:
+        result = {key: False for key in command.keys()}
+        for name, args in command.items():
+            if name == "flash_word":
+                if "word" in args:
+                    results = await self.flash_word(args["word"])
+                    result[name] = "flashed: " + results
+                else:
+                    result[name] = "missing word key"
+        return result
+
+    async def flash_word(self, word: str) -> str:
+        for char in word:
+            mapping = segment_char_mappings.get(
+                char,
+                segment_char_mappings.get(
+                    char.lower(), segment_char_mappings.get(char.upper())
+                ),
+            )
+            if mapping is not None:
+                self.i2c.write_byte_data(
+                    self.i2c_address, MCP23017_GPIOA, mapping[self.a_direction]
+                )
+                self.i2c.write_byte_data(
+                    self.i2c_address, MCP23017_GPIOB, mapping[self.b_direction]
+                )
+                await asyncio.sleep(0.5)
+                self.i2c.write_byte_data(self.i2c_address, MCP23017_GPIOA, 0x00)
+                self.i2c.write_byte_data(self.i2c_address, MCP23017_GPIOB, 0x00)
+                await asyncio.sleep(0.5)
+        return word + f" with a_direction {self.a_direction}"
+
+
+def check_and_enable_i2c():
+    try:
+        # Check the current I2C configuration
+        result = subprocess.run(
+            ["sudo", "raspi-config", "nonint", "get_i2c"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+        # Get the returned output and strip any whitespace
+        i2c_status = result.stdout.strip()
+
+        # If the status is 1, enable I2C
+        if i2c_status == "1":
+            LOGGER.info("I2C is disabled. Enabling it now...")
+            subprocess.run(
+                ["sudo", "raspi-config", "nonint", "do_i2c", "0"], check=True
+            )
+            LOGGER.info("I2C has been enabled.")
+        else:
+            LOGGER.info("I2C is already enabled.")
+
+    except subprocess.CalledProcessError as e:
+        LOGGER.error(f"Error executing command: {e}")
+        LOGGER.error(f"Output: {e.output}")
+    except Exception as e:
+        LOGGER.error(f"An unexpected error occurred: {e}")
+
 
 if __name__ == "__main__":
+    check_and_enable_i2c()
     asyncio.run(Module.run_from_registry())

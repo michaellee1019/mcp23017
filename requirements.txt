@@ -2,4 +2,5 @@
 viam-sdk==0.34.0
 RPi.GPIO==0.7.1
 adafruit-circuitpython-mcp230xx==2.5.15
+smbus==1.1.post2
 typing-extensions

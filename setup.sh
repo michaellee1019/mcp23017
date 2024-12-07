@@ -18,6 +18,7 @@ if ! python3 -m venv $VENV_NAME >/dev/null 2>&1; then
 			echo "Package info not found, trying apt update"
 			$SUDO apt -qq update >/dev/null
 		fi
+        $SUDO apt install -qqypython-dev-is-python3
         $SUDO apt install -qqy python3-venv >/dev/null 2>&1
         if ! python3 -m .venv $VENV_NAME >/dev/null 2>&1; then
             echo $ENV_ERROR >&2
