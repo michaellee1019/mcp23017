@@ -8,6 +8,10 @@
     {
       "api": "rdk:component:board",
       "model": "michaellee1019:mcp23017:board"
+    },
+    {
+      "api": "rdk:component:generic",
+      "model": "michaellee1019:mcp23017:seven_segment_led"
     }
   ],
   "entrypoint": "reload.sh",

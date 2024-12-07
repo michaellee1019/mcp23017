@@ -61,12 +61,12 @@ A/B7 -> g
   "b_direction": "gfedcba"
 }
 
-| Attribute     | Required? | Default   | Description
-| --------      | -------   |
-| `i2c_bus`     | No        | `1`       | The i2c bus number to communicate with the `mcp20317`. For example the Raspberry Pi uses bus 1 in most circumstances.
-| `ic2_address` | No        | `"0x27"`  | The i2c address of the `mcp20317` peripheral. The default address of the `mcp20317` is usually `0x27` and can be changed using the `A0-A2` pins.
-| `a_direction` | No        | `gfedcba` | Wiring order of the LED segments on the A channel
-| `b_direction` | No        | `gfedcba` | Wiring order of the LED segments on the B channel
+| Attribute     | Required? | Default   | Description |
+| --------      | -------   | ------    | ------ |
+| `i2c_bus`     | No        | `1`       | The i2c bus number to communicate with the `mcp20317`. For example the Raspberry Pi uses bus 1 in most circumstances. |
+| `ic2_address` | No        | `"0x27"`  | The i2c address of the `mcp20317` peripheral. The default address of the `mcp20317` is usually `0x27` and can be changed using the `A0-A2` pins. |
+| `a_direction` | No        | `gfedcba` | Wiring order of the LED segments on the A channel |
+| `b_direction` | No        | `gfedcba` | Wiring order of the LED segments on the B channel |
 
 ## Example DoCommands
 
