@@ -13,8 +13,12 @@
   "entrypoint": "reload.sh",
   "first_run": "",
   "build": {
-    "build": "rm -f module.tar.gz && tar czf module.tar.gz requirements.txt src/*.py meta.json setup.sh reload.sh",
+    "build": "./build.sh",
     "setup": "./setup.sh",
-    "path": "module.tar.gz"
+    "path": "dist/archive.tar.gz",
+    "arch": [
+      "linux/amd64",
+      "linux/arm64"
+    ]
   }
 }
