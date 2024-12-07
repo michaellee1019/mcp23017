@@ -49,7 +49,6 @@ MCP23017_OLATB = 0x15
 
 LOGGER = logging.getLogger(__name__)
 
-
 class MCP23017Board(Board, EasyResource):
     MODEL: ClassVar[Model] = Model(ModelFamily("michaellee1019", "mcp23017"), "board")
     i2c: busio.I2C = None
@@ -283,17 +282,17 @@ segment_char_mappings = {
     "U": {"gfedcba": 0x3E, "abcdefg": 0x3E},
     "u": {"gfedcba": 0x1C, "abcdefg": 0x1C},
     "y": {"gfedcba": 0x3B, "abcdefg": 0x6E},
-    "0": {"gfedcba": 0x7E, "abcdefg": 0xC0},
-    "1": {"gfedcba": 0x30, "abcdefg": 0xF9},
-    "2": {"gfedcba": 0x6D, "abcdefg": 0xA4},
-    "3": {"gfedcba": 0x79, "abcdefg": 0xB0},
-    "4": {"gfedcba": 0x33, "abcdefg": 0x99},
-    "5": {"gfedcba": 0x5B, "abcdefg": 0x92},
-    "6": {"gfedcba": 0x5F, "abcdefg": 0x82},
-    "7": {"gfedcba": 0x70, "abcdefg": 0xF8},
-    "8": {"gfedcba": 0x7F, "abcdefg": 0x80},
-    "9": {"gfedcba": 0x7B, "abcdefg": 0x90},
-    " ": {"gfedcba": 0x00, "abcdefg": 0x00},
+    "0": {"gfedcba": 0x7E, "abcdefg": 0x3F},
+    "1": {"gfedcba": 0x30, "abcdefg": 0x06},
+    "2": {"gfedcba": 0x6D, "abcdefg": 0x5B},
+    "3": {"gfedcba": 0x79, "abcdefg": 0x4F},
+    "4": {"gfedcba": 0x33, "abcdefg": 0x66},
+    "5": {"gfedcba": 0x5B, "abcdefg": 0x6D},
+    "6": {"gfedcba": 0x5F, "abcdefg": 0x7D},
+    "7": {"gfedcba": 0x70, "abcdefg": 0x07},
+    "8": {"gfedcba": 0x7F, "abcdefg": 0x7F},
+    "9": {"gfedcba": 0x7B, "abcdefg": 0x6F},
+    " ": {"gfedcba": 0x00, "abcdefg": 0x00}
 }
 
 class MCP23017SevenSegmentLED(Generic, EasyResource):
@@ -303,6 +302,7 @@ class MCP23017SevenSegmentLED(Generic, EasyResource):
     i2c_bus: int = 1
     i2c_address: int = 0x27
     i2c = None
+
     a_direction: str = "gfedcba"
     b_direction: str = "gfedcba"
 
@@ -315,17 +315,20 @@ class MCP23017SevenSegmentLED(Generic, EasyResource):
     def reconfigure(
         self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]
     ):
-        LOGGER.error(f"reconfiguring with: {config}")
+        # LOGGER.error(f"reconfiguring with: {config}")
         if "i2c_bus" in config.attributes.fields:
             self.i2c_bus = int(config.attributes.fields["i2c_bus"].number_value)
         if "i2c_address" in config.attributes.fields:
-            self.i2c_address = config.attributes.fields["i2c_address"].string_value
+            self.i2c_address = int(config.attributes.fields["i2c_address"].string_value, base=16)
         if "a_direction" in config.attributes.fields:
             self.a_direction = config.attributes.fields["a_direction"].string_value
         if "b_direction" in config.attributes.fields:
             self.b_direction = config.attributes.fields["b_direction"].string_value
 
-        self.i2c = smbus.SMBus(self.i2c_bus)
+        try:
+            self.i2c = smbus.SMBus(self.i2c_bus)
+        except Exception as e:
+            raise ValueError(f"i2c bus connection error on bus number '{self.i2c_bus}'. Check if your 'i2c_bus' attribute is correct", e)
 
         # Configue the register to default value
         for addr in range(22):
@@ -357,33 +360,70 @@ class MCP23017SevenSegmentLED(Generic, EasyResource):
         result = {key: False for key in command.keys()}
         for name, args in command.items():
             if name == "flash_word":
-                if "word" in args:
-                    results = await self.flash_word(args["word"])
+                if "word" in args and "channel" in args and "delay_seconds" in args:
+                    results = await self.flash_word(args["word"], args["channel"], args["delay_seconds"])
                     result[name] = "flashed: " + results
                 else:
-                    result[name] = "missing word key"
+                    result[name] = "missing 'word', 'channel', and/or 'delay_seconds' key."
+            if name == "display_char":
+                if "char" in args and "channel" in args:
+                    results = await self.display_char(args["char"], args["channel"])
+                else: result[name] = "missing 'char', and/or 'channel' key."
+            if name == "clear":
+                if "channel" in args:
+                    results = await self.clear(args["channel"])
+                else: result[name] = "missing 'channel' key."
         return result
 
-    async def flash_word(self, word: str) -> str:
-        for char in word:
-            mapping = segment_char_mappings.get(
+    def get_register(self, channel: str):
+        if channel is not 'A' and channel is not 'B':
+            raise ValueError("channel must be either 'A' or 'B'")
+        return MCP23017_GPIOA if channel == 'A' else MCP23017_GPIOB
+
+    def best_match_mapping(self, char: chr):
+        return segment_char_mappings.get(
                 char,
                 segment_char_mappings.get(
                     char.lower(), segment_char_mappings.get(char.upper())
                 ),
             )
+
+    async def flash_word(self, word: str, channel: str, delay: float) -> str:
+        for char in word:
+            mapping = self.best_match_mapping(char)
+            a_or_b_register = self.get_register(channel)
             if mapping is not None:
+
                 self.i2c.write_byte_data(
-                    self.i2c_address, MCP23017_GPIOA, mapping[self.a_direction]
+                    self.i2c_address, a_or_b_register, mapping[self.a_direction]
                 )
-                self.i2c.write_byte_data(
-                    self.i2c_address, MCP23017_GPIOB, mapping[self.b_direction]
-                )
-                await asyncio.sleep(0.5)
-                self.i2c.write_byte_data(self.i2c_address, MCP23017_GPIOA, 0x00)
-                self.i2c.write_byte_data(self.i2c_address, MCP23017_GPIOB, 0x00)
-                await asyncio.sleep(0.5)
-        return word + f" with a_direction {self.a_direction}"
+
+                await asyncio.sleep(delay)
+
+                self.i2c.write_byte_data(self.i2c_address, a_or_b_register, 0x00)
+
+                await asyncio.sleep(delay)
+
+        return word
+
+    async def display_char(self, char: chr, channel: str) -> None:
+        mapping = self.best_match_mapping(char)
+        a_or_b_register = self.get_register(channel)
+
+        self.i2c.write_byte_data(
+            self.i2c_address, a_or_b_register, mapping[self.a_direction]
+        )
+        
+        return True
+
+    async def clear(self, channel: str) -> None:
+        a_or_b_register = self.get_register(channel)
+
+        self.i2c.write_byte_data(
+            self.i2c_address, a_or_b_register, 0x00
+        )
+
+        return True
 
 
 def check_and_enable_i2c():
