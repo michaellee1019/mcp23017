@@ -14,7 +14,7 @@
       "model": "michaellee1019:mcp23017:seven_segment_led"
     }
   ],
-  "entrypoint": "reload.sh",
+  "entrypoint": "dist/main",
   "first_run": "",
   "build": {
     "build": "./build.sh",
