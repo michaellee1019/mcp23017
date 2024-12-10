@@ -6,6 +6,7 @@ from typing import Any, ClassVar, Dict, List, Mapping, Optional, Sequence
 from typing_extensions import Self
 from viam.components.board import Board, TickStream
 from viam.components.generic import Generic
+from viam.components.sensor import Sensor
 from viam.module.module import Module
 from viam.proto.app.robot import ComponentConfig
 from viam.proto.common import ResourceName
@@ -17,11 +18,11 @@ from viam.utils import ValueTypes
 from viam import logging
 
 import digitalio
-import board
-import busio
+
 import smbus
 from adafruit_mcp230xx.mcp23017 import MCP23017
 from adafruit_mcp230xx.digital_inout import DigitalInOut
+from adafruit_extended_bus import ExtendedI2C as I2C
 
 MCP23017_IODIRA = 0x00
 MCP23017_IPOLA = 0x02
@@ -51,9 +52,10 @@ LOGGER = logging.getLogger(__name__)
 
 class MCP23017Board(Board, EasyResource):
     MODEL: ClassVar[Model] = Model(ModelFamily("michaellee1019", "mcp23017"), "board")
-    i2c: busio.I2C = None
+    i2c: I2C
+    i2c_bus: int = 1
     i2c_address: int = 0x27
-    mcp: MCP23017 = None
+    mcp: MCP23017
     pins: List[DigitalInOut]
     pullups: List[int] = []
 
@@ -95,9 +97,9 @@ class MCP23017Board(Board, EasyResource):
             config (ComponentConfig): The new configuration
             dependencies (Mapping[ResourceName, ResourceBase]): Any dependencies (both implicit and explicit)
         """
-        # if "i2c_bus" in config.attributes.fields:
-        #     self.i2c_bus = int(config.attributes.fields["i2c_bus"].string_value)
-        self.i2c = busio.I2C(board.SCL, board.SDA)
+        if "i2c_bus" in config.attributes.fields:
+            self.i2c_bus = int(config.attributes.fields["i2c_bus"].string_value)
+        self.i2c = I2C(self.i2c_bus)
         if "i2c_address" in config.attributes.fields:
             self.i2c_address = int(
                 config.attributes.fields["i2c_address"].string_value, base=16
@@ -255,6 +257,55 @@ class MCP23017Board(Board, EasyResource):
         **kwargs,
     ) -> TickStream:
         raise NotImplementedError()
+
+class MCP23017Sensor(Sensor, EasyResource):
+    MODEL = "michaellee1019:mcp23017:sensor"
+    i2c: I2C
+    i2c_bus: int = 1
+    i2c_address: int = 0x27
+    mcp: MCP23017
+    pins: List[DigitalInOut]
+    pullups: List[int] = []
+
+    @classmethod
+    def new(self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]) -> Self:
+        output = self(config.name)
+        output.reconfigure(config, dependencies)
+        return output
+
+    def reconfigure(self,
+                    config: ComponentConfig,
+                    dependencies: Mapping[ResourceName, ResourceBase]):
+        if "i2c_bus" in config.attributes.fields:
+            self.i2c_bus = int(config.attributes.fields["i2c_bus"].string_value)
+        self.i2c = I2C(self.i2c_bus)
+        if "i2c_address" in config.attributes.fields:
+            self.i2c_address = int(
+                config.attributes.fields["i2c_address"].string_value, base=16
+            )
+        if "pullups" in config.attributes.fields:
+            self.pullups = [
+                int(x) for x in config.attributes.fields["pullups"].list_value
+            ]
+
+        self.mcp = MCP23017(self.i2c, self.i2c_address)
+        self.pins = [self.mcp.get_pin(i) for i in range(16)]
+
+        for i in range(16):
+            if i in self.pullups:
+                self.pins[i].pull = digitalio.Pull.UP
+            else:
+                self.pins[i].pull = None
+
+        return super().reconfigure(config, dependencies)
+
+    async def get_readings(self, **kwargs):
+        readings = {}
+        for idx, pin in enumerate(self.pins):
+            if not pin.direction:
+                pin.switch_to_input()
+            readings[str(idx)] = pin.value
+        return readings
 
 segment_char_mappings = {
     "A": {"gfedcba": 0x77, "abcdefg": 0x77},

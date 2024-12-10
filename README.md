@@ -2,14 +2,14 @@
 The MCP23017 is a GPIO expansion chip that uses i2c to add an additional 16 GPIOs. This module is supported on Raspberry Pi 4B/5 and can supported up to 8 devices on a single i2c network, allowing for up to 128 (16*8) GPIO pins using the default i2c bus of the Raspberry Pi
 
 
-# michaellee1019:mcp23017:board
+## Model: michaellee1019:mcp23017:board
 This model makes a Viam Board to control the mcp23017. Pins are numbered "0" to "15" for the pins. "0" maps to "A0" and range up to "15" for "B7"
 
 No configuration needed. By default the i2c_address is `0x27` and can be configured with a different `i2c_address` as shown below. Additionally, all pins are configured with no input pull resistors. To enable the internal pullup resistor on a pin, add the pin number to the `pullups` list in configuration.
 
 This model is implemented using the [Adafruit mcp230xx library](https://docs.circuitpython.org/projects/mcp230xx/en/latest/index.html).
 
-## Configuration
+### Configuration
 ```
 {
   "i2c_address": "0x27",
@@ -20,13 +20,13 @@ This model is implemented using the [Adafruit mcp230xx library](https://docs.cir
 }
 ```
 
-## Future Work
+### Future Work
 - Supporting digital interrupts
 
-# michaellee1019:mcp23017:sevensegment
+## Model: michaellee1019:mcp23017:sevensegment
 This model supports diplaying characters on two independent seven segment LED display. One character is connected to the "A" pins 0-7 and the other to the B pins. Its not the most efficient use of GPIO pins compared to other devices out there (for example take a look at the modules for [TM1637]() and [ht16k33](https://github.com/michaellee1019/ht16k33) modules). But it is useful if you want to control just 1-2 digits and especially useful in testing your datasheet knowledge for how to wire an LED segment display. Each LED is controllable on a `channel` with this model, which is either the A pins or B pins.
 
-## Wiring Order
+### Wiring Order
 There are two standards for wiring LED segments: `gfedcba` and `abcdefg`: The most common is `gfedcba`. If you can choose your wiring, this is recommended. This standard seems like a clever ploy for those that can actually say the alphabet backwards, disadvantaging the rest of us. Depending on your wiring between the segment and the mcp23017, choose the corresponding mode based on the mapping below:
 
 gfedcba:
@@ -53,7 +53,7 @@ A/B6 -> f
 A/B7 -> g
 ```
 
-## Configuration
+### Configuration
 ```
 {
   "i2c_bus": 1,
@@ -70,9 +70,9 @@ A/B7 -> g
 | `a_direction` | No        | `gfedcba` | Wiring order of the LED segments on the A channel |
 | `b_direction` | No        | `gfedcba` | Wiring order of the LED segments on the B channel |
 
-## Example DoCommands
+### Example DoCommands
 
-### Display Character
+#### Display Character
 Show a single character on the specified channel (A or B).
 ```
 {
@@ -80,7 +80,7 @@ Show a single character on the specified channel (A or B).
 }
 ```
 
-### Clear Display
+#### Clear Display
 Clear text on the diplay. Equal to having the display render a `" "` space character
 ```
 {
@@ -88,7 +88,7 @@ Clear text on the diplay. Equal to having the display render a `" "` space chara
 }
 ```
 
-### Flash Word
+#### Flash Word
 Cycle through a sequence of characters to display a readable word. Each character will be displayed in order on the channel specified. There will be a delay of the specified seconds between each character.
 ```
 {
@@ -96,8 +96,21 @@ Cycle through a sequence of characters to display a readable word. Each characte
 }
 ```
 
-# michaellee1019:mcp23017:sensor
-TODO
+## Model: michaellee1019:mcp23017:sensor
+This model is a sensor that reads the state of the 16 pins on the mcp23017. It will return a dictionary with the pin number as the key and the value as the state of the pin.
+
+### Configuration
+Similar to the `board` model, the `sensor` model requires the `i2c_bus` and `i2c_address` to be specified. Additionally, the `pullups` attribute is used to specify which pins should have internal pullups enabled.
+```
+{
+  "i2c_bus": 1,
+  "i2c_address": "0x27",
+  "pullups": [
+    14,
+    15
+  ]
+}
+```
 
 # michaellee1019:mcp23017:camera
 Just kidding!
