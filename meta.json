@@ -7,15 +7,21 @@
   "models": [
     {
       "api": "rdk:component:board",
-      "model": "michaellee1019:mcp23017:board"
+      "model": "michaellee1019:mcp23017:board",
+      "markdown_link": "README.md#model-michaellee1019mcp23017board",
+      "short_description": "A board component for the mcp23017 GPIO expansion chip. Pins are numbered 0-15."
     },
     {
       "api": "rdk:component:generic",
-      "model": "michaellee1019:mcp23017:seven_segment_led"
+      "model": "michaellee1019:mcp23017:seven_segment_led",
+      "markdown_link": "README.md#model-michaellee1019mcp23017sevensegment",
+      "short_description": "A component to control up to two seven segment led displays using one mcp23017 chip."
     },
     {
       "api": "rdk:component:sensor",
-      "model": "michaellee1019:mcp23017:sensor"
+      "model": "michaellee1019:mcp23017:sensor",
+      "markdown_link": "README.md#model-michaellee1019mcp23017sensor",
+      "short_description": "Provides a list of pin output states as a sensor component. Pins are numbered 0-15."
     }
   ],
  "entrypoint": "dist/main",
