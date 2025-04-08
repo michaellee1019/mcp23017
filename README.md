@@ -1,5 +1,5 @@
 # mcp23017
-The MCP23017 is a GPIO expansion chip that uses i2c to add an additional 16 GPIOs. This module is supported on Raspberry Pi 4B/5 and can supported up to 8 devices on a single i2c network, allowing for up to 128 (16*8) GPIO pins using the default i2c bus of the Raspberry Pi
+The MCP23017 is a GPIO expansion chip that uses i2c to add an additional 16 GPIOs. This module is supported on Raspberry Pi 4B/5 and can support up to 8 devices on a single i2c network, allowing for up to 128 (16*8) GPIO pins using the default i2c bus of the Raspberry Pi.
 
 
 ## Model: michaellee1019:mcp23017:board

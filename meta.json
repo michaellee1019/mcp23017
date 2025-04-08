@@ -4,6 +4,7 @@
   "visibility": "public",
   "url": "https://github.com/michaellee1019/mcp23017",
   "description": "Provides models for the mcp23017 GPIO expansion chip.",
+  "markdown_link": "README.md",
   "models": [
     {
       "api": "rdk:component:board",
@@ -24,12 +25,11 @@
       "short_description": "Provides a list of pin output states as a sensor component. Pins are numbered 0-15."
     }
   ],
- "entrypoint": "dist/main",
+  "entrypoint": "reload.sh",
   "first_run": "",
   "build": {
-    "build": "./build.sh",
-    "setup": "./setup.sh",
-    "path": "dist/archive.tar.gz",
+    "build": "rm -f module.tar.gz && tar czf module.tar.gz requirements.txt src/*.py meta.json setup.sh reload.sh && chmod 777 module.tar.gz",
+      "path": "YOLOv8-0_1_0-linux-amd64.tar.gz",
     "arch": [
       "linux/amd64",
       "linux/arm64"
