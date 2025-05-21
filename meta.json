@@ -28,11 +28,13 @@
   "entrypoint": "/dist/main",
   "first_run": "",
   "build": {
-    "build": "build.sh",
+    "build": "./build.sh",
     "path": "dist/archive.tar.gz",
     "arch": [
       "linux/amd64",
       "linux/arm64",
+      "linux/arm32v6",
+      "linux/arm32v7",
       "any",
       "linux/any",
       "darwin/any",
