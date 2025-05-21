@@ -29,17 +29,23 @@
   "first_run": "",
   "build": {
     "build": "./build.sh",
+    "setup": "./setup.sh",
     "path": "dist/archive.tar.gz",
     "arch": [
       "linux/amd64",
       "linux/arm64",
+      "darwin/arm64",
+
       "linux/arm32v6",
       "linux/arm32v7",
+
       "any",
       "linux/any",
       "darwin/any",
       "any/arm64",
-      "any/amd64"
+      "any/amd64",
+
+      "windows/amd64"
     ]
   }
 }
